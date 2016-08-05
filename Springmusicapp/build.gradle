@@ -1,0 +1,122 @@
+buildscript {
+    ext {
+        springBootVersion = '1.3.5.RELEASE'
+        springCloudConnectorsVersion = '1.2.2.RELEASE'
+    }
+
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { 
+        url "https://repo.spring.io/plugins-release"
+        url "https://plugins.gradle.org/m2/" }
+    }
+
+    dependencies {
+	    classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.0.1"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+
+apply plugin: 'eclipse-wtp'
+apply plugin: 'idea'
+
+apply plugin: 'spring-boot'
+apply plugin: 'war'
+
+version = '1.0'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+allprojects {
+apply from: "$rootDir/gradle/versioning.gradle"
+//apply from: "$rootDir/gradle/nexusdownload.gradle"
+}
+
+repositories {
+    mavenCentral()
+    maven { url "http://repo.spring.io/milestone" }
+    maven { url "http://repo.spring.io/snapshot" }
+}
+
+dependencies {
+    // Spring Boot
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.boot:spring-boot-starter-actuator"
+    compile "org.springframework.boot:spring-boot-starter-data-jpa"
+    compile "org.springframework.boot:spring-boot-starter-data-mongodb"
+    compile "org.springframework.boot:spring-boot-starter-redis"
+
+    // Spring Cloud Connectors
+    compile "org.springframework.cloud:spring-cloud-core:${springCloudConnectorsVersion}"
+    compile "org.springframework.cloud:spring-cloud-spring-service-connector:${springCloudConnectorsVersion}"
+    compile "org.springframework.cloud:spring-cloud-cloudfoundry-connector:${springCloudConnectorsVersion}"
+
+    // JPA Persistence
+    compile "commons-dbcp:commons-dbcp"
+    runtime "com.h2database:h2"
+    runtime "mysql:mysql-connector-java"
+    runtime "postgresql:postgresql:9.1-901-1.jdbc4"
+
+    // Redis Persistence
+    compile "redis.clients:jedis"
+
+    // Webjars
+    compile "org.webjars:bootstrap:3.1.1"
+    compile "org.webjars:angularjs:1.2.16"
+    compile "org.webjars:angular-ui:0.4.0-2"
+    compile "org.webjars:angular-ui-bootstrap:0.10.0-1"
+    compile "org.webjars:jquery:2.1.0-2"
+
+    // Testing
+    testCompile "junit:junit"
+}
+
+apply plugin: "sonar-runner"
+
+sonarRunner {
+sonarProperties {
+             property "sonar.host.url", "http://ec2-54-210-135-118.compute-1.amazonaws.com:9000/"
+             property "sonar.jdbc.url", "jdbc:mysql://ec2-54-210-135-118.compute-1.amazonaws.com:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance"
+             property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
+             property "sonar.jdbc.username", "sonar"
+             property "sonar.jdbc.password", "Sonar@123"
+    }
+  }
+ 
+subprojects {
+       sonarRunner {
+               sonarProperties {
+                  property "sonar.sourceEncoding", "UTF-8"
+                               }
+                       }
+              }
+			  
+
+
+task createBuildInfoFile << {
+def buildInfoFile = new File("$buildDir/build-info.properties")
+Properties props = new Properties()
+props.setProperty('version', project.version.toString())
+props.setProperty('timestamp', project.buildTimestamp)
+props.store(buildInfoFile.newWriter(), null)
+}
+			  
+			  
+war {
+	dependsOn createBuildInfoFile
+    baseName = "spring-music"
+    from(buildDir) {
+    include 'build-info.properties'
+    into('WEB-INF/classes')
+}
+	
+	
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.14'
+}

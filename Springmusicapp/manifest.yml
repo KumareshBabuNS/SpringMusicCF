@@ -1,0 +1,7 @@
+---
+applications:
+- name: thespringmusic
+  memory: 1G
+  host: gradlespringmusic
+  path: build/libs/spring-music.jar
+

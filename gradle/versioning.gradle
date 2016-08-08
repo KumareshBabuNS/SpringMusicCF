@@ -13,7 +13,7 @@ this.build = build
 String toString() {
 String fullVersion = "$major.$minor"
 if(build) {
-fullVersion += ".$build”
+fullVersion += ".$build"
 }
 fullVersion
 }
